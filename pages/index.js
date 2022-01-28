@@ -1,57 +1,125 @@
+import { useState, useEffect } from 'react';
+import useSWR from 'swr'
+
+import {useRouter} from 'next/router'
+
 import appConfig from '../config.json'
 import { Box, Button, Text, TextField, Image } from '@skynexui/components';
 
-function GlobalStyle() {
-    return (
-      <style global jsx>{`
-        * {
-          margin: 0;
-          padding: 0;
-          box-sizing: border-box;
-          list-style: none;
-        }
-        body {
-          font-family: 'Open Sans', sans-serif;
-        }
-        /* App fit Height */ 
-        html, body, #__next {
-          min-height: 100vh;
-          display: flex;
-          flex: 1;
-        }
-        #__next {
-          flex: 1;
-        }
-        #__next > * {
-          flex: 1;
-        }
-        /* ./App fit Height */ 
-      `}</style>
-    );
-  }
 
-  function Titulo(props) {
-    const Tag = props.tag || 'h1';
-    return (
-      <>
-        <Tag>{props.children}</Tag>
-        <style jsx>{`
+
+function Titulo(props) {
+  const Tag = props.tag || 'h1';
+  return (
+    <>
+      <Tag>{props.children}</Tag>
+      <style jsx>{`
               ${Tag} {
                   color: ${appConfig.theme.colors.neutrals['000']};
                   font-size: 24px;
                   font-weight: 600;
               }
               `}</style>
-      </>
-    );
+    </>
+  );
+}
+
+
+
+function useFormik({
+  initialValues
+}){
+  const [values, setValues] = useState(initialValues)
+
+  // console.log({values})
+  function handleChange(event){
+    //vai pegar a chave name=userName
+   const fieldName = event.target.getAttribute('name') //pega o componente input 
+   const fieldNameValue = event.target.value;
+    setValues({
+      //tudo o que tá no objeto
+      ...values,
+      //userName: valor do campo
+      [fieldName]: fieldNameValue,
+    })  
   }
+  return {
+    values,
+    handleChange
+  }
+}
 
 export default function PaginaInicial() {
-    const username = 'CrystyanSantos9';
-    return (
-        <>
-             <GlobalStyle />
-             <Box
+
+  const [showUserInfos, setShowUserInfos] = useState(false)
+
+ const fetcher = (url) => fetch(url).then((res) => res.json());
+
+function profile(username=null){
+  const { data, error } = useSWR('https://api.github.com/users/'+username, fetcher)
+  if (error) return "An error has occurred.";
+  if (!data) return <div>Loading...</div>
+  return (
+    <>
+      <Text
+               styleSheet={{
+                textAlign:'center',
+                color: appConfig.theme.colors.neutrals[100],
+                backgroundColor: appConfig.theme.colors.neutrals[900],
+                padding: '3px 10px',
+                margin: '2px 2px',
+                borderRadius: '1000px',
+                fontSize: '12px'
+              }}
+               >
+                 Nome: {data.name}
+               </Text>
+               <Text
+               styleSheet={{
+                textAlign:'center',
+                color: appConfig.theme.colors.neutrals[100],
+                backgroundColor: appConfig.theme.colors.neutrals[900],
+                padding: '3px 10px',
+                margin: '2px 2px',
+                borderRadius: '1000px',
+                fontSize: '12px'
+              }}
+               >
+                Public repos: {data.public_repos}
+               </Text>
+               <Text
+               styleSheet={{
+                textAlign:'center',
+                color: appConfig.theme.colors.neutrals[100],
+                backgroundColor: appConfig.theme.colors.neutrals[900],
+                padding: '3px 10px',
+                margin: '2px 2px',
+                borderRadius: '1000px',
+                fontSize: '12px'
+              }}
+               >
+                followers: {data.followers}
+               </Text>
+      </>
+  );
+  }
+
+  const formik = useFormik({
+    initialValues: {
+      userName: 'crystyansantos9',
+    },
+    onSubmit: values => {
+      alert(JSON.stringify(values, null, 2));
+    },
+  });
+
+  //usando estado - ele tem um monte de listeners que olham para ele 
+  const roteamento = useRouter() /* semelhante ao useNavigation no reactNative */
+
+  return (
+    <>
+      {/* <GlobalStyle /> */}
+      <Box
         styleSheet={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           backgroundColor: appConfig.theme.colors.primary[500],
@@ -76,6 +144,11 @@ export default function PaginaInicial() {
         >
           {/* Formulário */}
           <Box
+          onSubmit={(event)=>{
+            event.preventDefault()
+            //empilha mais uma página em nosso array de navegação - seremos encaminhados para essa página 
+           roteamento.push('/chat')
+          }}
             as="form"
             styleSheet={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -88,7 +161,12 @@ export default function PaginaInicial() {
             </Text>
 
             <TextField
+             name="userName"
+              value={formik.values.userName}
               fullWidth
+              //é necessário um onChange que é o handle do evento de clique 
+              onChange={formik.handleChange}
+
               textFieldColors={{
                 neutral: {
                   textColor: appConfig.theme.colors.neutrals[200],
@@ -129,30 +207,52 @@ export default function PaginaInicial() {
               minHeight: '240px',
             }}
           >
-            <Image
+
+            
+        
+            { formik.values.userName.length > 2 ? (
+              <Image
               styleSheet={{
                 borderRadius: '50%',
                 marginBottom: '16px',
               }}
-              src={`https://github.com/${username}.png`}
-            />
-            <Text
-              variant="body4"
-              styleSheet={{
-                color: appConfig.theme.colors.neutrals[200],
+              src={`https://github.com/${formik.values.userName}.png`}
+              />
+              ):(
+               <Text
+               styleSheet={{
+                 textAlign:'center',
+                color: appConfig.theme.colors.neutrals[100],
                 backgroundColor: appConfig.theme.colors.neutrals[900],
                 padding: '3px 10px',
-                borderRadius: '1000px'
+                margin: '2px 5px',
+                borderRadius: '1000px',
+                fontSize: '18px'
               }}
-            >
-              {username}
-            </Text>
+               >
+                 Imagem não encontrada
+               </Text>
+              )}
+
+              { profile(formik.values.userName)}
+
+               <Text
+               variant="body4"
+               styleSheet={{
+                 color: appConfig.theme.colors.neutrals[200],
+                 backgroundColor: appConfig.theme.colors.neutrals[900],
+                 padding: '3px 10px',
+                 borderRadius: '1000px'
+               }}
+             >
+             {formik.values.userName}
+             </Text>   
           </Box>
           {/* Photo Area */}
         </Box>
       </Box>
-          
-        </>
-    )
+
+    </>
+  )
 }
 
