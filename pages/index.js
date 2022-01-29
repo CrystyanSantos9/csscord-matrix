@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import useSWR from 'swr'
 
 import {useRouter} from 'next/router'
@@ -53,15 +53,44 @@ export default function PaginaInicial() {
 
   const [showUserInfos, setShowUserInfos] = useState(false)
 
- const fetcher = (url) => fetch(url).then((res) => res.json());
+  const fetcher = async (url) => {
+    let res;
+    res = await fetch(url);
+    if (!res.ok) {
+      const error = new Error('An error occurred while fetching the data.');
+      error.info = await res.json();
+      error.status = res.status;
+      throw error;
+    }
+    return res.json();
+  };
 
-function profile(username=null){
+function profile(username){
   const { data, error } = useSWR('https://api.github.com/users/'+username, fetcher)
-  if (error) return "An error has occurred.";
-  if (!data) return <div>Loading...</div>
+
+  if (error){
+    console.log(error.info)
+    return (
+      <Text
+      styleSheet={{
+       textAlign:'center',
+       color: appConfig.theme.colors.neutrals[100],
+       backgroundColor: appConfig.theme.colors.neutrals[600],
+       padding: '3px 3px',
+       margin: '5px 2px',
+       borderRadius: '0px',
+       fontSize: '12px'
+     }}
+      >
+      {JSON.stringify(error.info["message"])}
+      </Text>
+    )
+  }
+  if (!error) return <div>Loading...</div>
+
   return (
     <>
-      <Text
+              <Text
                styleSheet={{
                 textAlign:'center',
                 color: appConfig.theme.colors.neutrals[100],
