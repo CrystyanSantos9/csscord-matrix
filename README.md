@@ -27,3 +27,9 @@ yarn dev
 ```
 yarn add @skynexui/components
 ``` 
+
+## instalando integração com supabase 
+
+```
+yarn add @supabase/supabase-js
+``` 

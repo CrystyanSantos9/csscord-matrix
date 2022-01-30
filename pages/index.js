@@ -56,6 +56,7 @@ export default function PaginaInicial() {
   const fetcher = async (url) => {
     let res;
     res = await fetch(url);
+    console.log(res)
     if (!res.ok) {
       const error = new Error('An error occurred while fetching the data.');
       error.info = await res.json();
@@ -66,8 +67,8 @@ export default function PaginaInicial() {
   };
 
 function profile(username){
+  // const { data, error } = useSWR(''+username, fetcher)
   const { data, error } = useSWR('https://api.github.com/users/'+username, fetcher)
-
   if (error){
     console.log(error.info)
     return (
@@ -82,12 +83,12 @@ function profile(username){
        fontSize: '12px'
      }}
       >
-      {JSON.stringify(error.info["message"])}
+      {error.info && JSON.stringify(error.info["message"])}
       </Text>
     )
   }
-  if (!error) return <div>Loading...</div>
-
+  
+if(data){
   return (
     <>
               <Text
@@ -132,6 +133,8 @@ function profile(username){
       </>
   );
   }
+  if (!error) return <div>Loading...</div>
+}
 
   const formik = useFormik({
     initialValues: {
@@ -263,7 +266,7 @@ function profile(username){
                </Text>
               )}
 
-              { profile(formik.values.userName)}
+              { profile &&  profile(formik.values.userName)}
 
                <Text
                variant="body4"
